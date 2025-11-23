@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Postagem - Golden Age RPG</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&family=Yuji+Syuku&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+  <style>
+    /* --- 1. CSS DO PREVIEW (Igual ao postagem2.css) --- */
+    #preview-container {
+      --bg: #0a0a14; --panel: #101120; --text: #d4d8f0;
+      --accent: #a050ff; --accent-dark: #6d20c5; --highlight: #c48fff;
+      --radius: 8px; --hp-color: #FF50A0; --hp-dark: #C52070; --text-muted: #9FA3B9;
+      font-family: 'Inter', sans-serif; color: var(--text); line-height: 1.5;
+    }
+
+    .rp-post-container {
+      box-sizing: border-box; width: 100%; font-family: 'Inter', sans-serif;
+      color: var(--text); background: var(--panel); border-radius: var(--radius);
+      position: relative; border: 1px solid rgba(160, 80, 255, 0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); padding: 20px;
+    }
+    .rp-post-container * { box-sizing: border-box; }
+
+    /* Imagem */
+    .rp-post-image-wrapper { position: relative; border-radius: 4px; overflow: hidden; margin-bottom: 15px; }
+    .rp-post-image-wrapper::before, .rp-post-image-wrapper::after {
+      content: '呪術師'; position: absolute; top: 30px; left: 15px; font-family: 'Yuji Syuku', serif;
+      font-size: 64px; letter-spacing: 15px; writing-mode: vertical-lr; pointer-events: none; z-index: 4;
+    }
+    .rp-post-image-wrapper::before { color: var(--accent); opacity: 0.6; text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent-dark); }
+    .rp-post-image-wrapper::after { color: #fff; text-shadow: 0 0 5px #fff; opacity: 0.8; }
+    .rp-post-image-wrapper img { display: block; width: 100%; height: auto; object-fit: cover; }
+    .rp-post-image-wrapper .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .vignette-overlay { background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.7) 100%); }
+    .grid-overlay { background-image: url('data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><g fill="rgba(160, 80, 255, 0.05)" fill-opacity="1" fill-rule="evenodd"><path d="M0 40L40 0H20L0 20M40 40V20L20 40"/></g></svg>'); }
+
+    /* Cantos */
+    .frame-corners { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+    .frame-corners .corner { position: absolute; width: 20px; height: 20px; }
+    .frame-corners .corner::before, .frame-corners .corner::after { content: ''; position: absolute; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .frame-corners .corner::before { width: 100%; height: 2px; }
+    .frame-corners .corner::after { width: 2px; height: 100%; }
+    .corner.top-left { top: 10px; left: 10px; } .corner.top-left::before { top:0; left:0; } .corner.top-left::after { top:0; left:0; }
+    .corner.top-right { top: 10px; right: 10px; transform: rotate(90deg); } .corner.top-right::before { top:0; left:0; } .corner.top-right::after { top:0; left:0; }
+    .corner.bottom-right { bottom: 10px; right: 10px; transform: rotate(180deg); } .corner.bottom-right::before { top:0; left:0; } .corner.bottom-right::after { top:0; left:0; }
+    .corner.bottom-left { bottom: 10px; left: 10px; transform: rotate(270deg); } .corner.bottom-left::before { top:0; left:0; } .corner.bottom-left::after { top:0; left:0; }
+
+    /* Header */
+    .rp-post-header { text-align: center; margin: 30px 0; }
+    .post-title { font-family: 'Yuji Syuku', serif; font-size: 28px; color: var(--highlight); text-shadow: 0 0 10px var(--accent); margin: 0 0 10px 0; display: flex; align-items: center; gap: 15px; }
+    .post-title::before, .post-title::after { content: ''; height: 1px; flex-grow: 1; background: linear-gradient(to right, transparent, var(--accent) 50%, transparent); opacity: 0.4; }
+    .post-title::after { background: linear-gradient(to left, transparent, var(--accent) 50%, transparent); }
+    .post-subtitle { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--text); text-transform: uppercase; letter-spacing: 1.5px; margin: 0; opacity: 0.8; }
+
+    /* Status */
+    .jjk-dossier-status-bars { display: flex; flex-direction: column; gap: 6px; max-width: 450px; margin: 25px auto; }
+    .jjk-dossier-status-item { display: flex; align-items: center; gap: 10px; }
+    .jjk-dossier-status-label { font-family: 'Share Tech Mono', monospace; font-size: 12px; font-weight: 700; width: 35px; flex-shrink: 0; color: var(--highlight); }
+    .jjk-dossier-status-bar-wrapper { flex-grow: 1; position: relative; }
+    .jjk-dossier-status-bar { height: 14px; background: rgba(0, 0, 0, .3); border-radius: 50px; overflow: hidden; border: 1px solid rgba(0, 0, 0, .2); }
+    .jjk-dossier-status-bar-fill { height: 100%; border-radius: 50px; width: 100%; /* Preview fixo em 100% */ }
+    .jjk-dossier-hp-fill { background: linear-gradient(90deg, var(--hp-dark), var(--hp-color)); }
+    .jjk-dossier-ea-fill { background: linear-gradient(90deg, var(--accent-dark), var(--accent)); }
+    .jjk-dossier-status-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Share Tech Mono', monospace; font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+
+    /* Conteúdo */
+    .rp-post-content { position: relative; background: rgba(0, 0, 0, 0.2); padding: 25px; border-radius: 4px; margin-top: 15px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-muted); line-height: 1.7; box-shadow: inset 0 0 15px rgba(160, 80, 255, 0.1); }
+    .rp-post-content::before, .rp-post-content::after { content: ''; position: absolute; width: 20px; height: 20px; opacity: 0.5; }
+    .rp-post-content::before { top: 10px; left: 10px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+    .rp-post-content::after { bottom: 10px; right: 10px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+    
+    /* Extras */
+    .rp-post-extras { margin-top: 15px; background: rgba(0, 0, 0, 0.5); border: 1px dashed var(--text-muted); border-radius: 4px; padding: 15px; position: relative; }
+    .rp-post-extras::before { content: 'INFO // SISTEMA'; position: absolute; top: -10px; left: 15px; background: var(--panel); padding: 0 8px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--highlight); letter-spacing: 1px; font-weight: 700; }
+    .rp-post-extras-content { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    
+    /* BBCode Simulation for Preview */
+    .rp-post-content b, .rp-post-extras-content b { color: #fff; font-weight: bold; }
+    .rp-post-content i, .rp-post-extras-content i { font-style: italic; }
+    .rp-post-content u, .rp-post-extras-content u { text-decoration: underline; }
+    .rp-post-content s, .rp-post-extras-content s { text-decoration: line-through; opacity: 0.6; }
+    .spoiler-box { background: #000; color: #000; padding: 2px 5px; border-radius: 4px; cursor: help; }
+    .spoiler-box:hover { color: #fff; }
+
+    /* --- 2. CSS DA INTERFACE DO EDITOR --- */
+    :root {
+      --ui-bg: #121212; --ui-panel: #1e1e24; --ui-border: #333;
+      --ui-accent: #a050ff; --ui-text: #f0f0f0; --ui-dim: #888;
+    }
+    
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Roboto', sans-serif; background-color: var(--ui-bg); color: var(--ui-text); }
+    .layout-grid { display: grid; grid-template-columns: 450px 1fr; height: 100%; width: 100%; }
+    
+    /* Esquerda */
+    .editor-pane { background: var(--ui-panel); border-right: 1px solid var(--ui-border); display: flex; flex-direction: column; height: 100%; min-height: 0; z-index: 10; }
+    .editor-header { padding: 15px; border-bottom: 1px solid var(--ui-border); background: #16161b; flex-shrink: 0; }
+    .editor-header h1 { margin: 0; font-size: 1.2em; color: var(--ui-accent); text-transform: uppercase; }
+    .editor-scroll-area { flex: 1 1 auto; overflow-y: auto; padding: 15px; }
+    .editor-content-wrapper { display: flex; flex-direction: column; gap: 15px; padding-bottom: 100px; }
+    
+    /* Direita */
+    .preview-pane { background: #050505; overflow-y: auto; height: 100%; display: flex; justify-content: center; padding: 40px; box-sizing: border-box; }
+    #preview-box { width: 100%; max-width: 800px; }
+
+    /* Inputs */
+    label { font-size: 0.75em; font-weight: 700; color: var(--ui-dim); text-transform: uppercase; margin-bottom: 3px; display: block; }
+    input, textarea { background: #0a0a0d; border: 1px solid var(--ui-border); color: #fff; padding: 8px; border-radius: 4px; font-family: inherit; font-size: 0.9em; width: 100%; box-sizing: border-box; }
+    input:focus, textarea:focus { outline: none; border-color: var(--ui-accent); }
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+    
+    /* Toolbar BBCode */
+    .bbcode-toolbar {
+      display: flex; gap: 5px; background: #25252e; padding: 5px; border-radius: 4px 4px 0 0; border: 1px solid var(--ui-border); border-bottom: none; flex-wrap: wrap;
+    }
+    .bb-btn {
+      background: #333; border: 1px solid #444; color: #ccc; border-radius: 3px; width: 24px; height: 24px; 
+      display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-family: serif;
+    }
+    .bb-btn:hover { background: #444; color: #fff; border-color: var(--ui-accent); }
+    .bb-btn input[type="color"] { opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+    
+    .text-area-wrapper textarea { border-radius: 0 0 4px 4px; min-height: 150px; }
+
+    /* Botões */
+    .btn { padding: 10px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; width: 100%; transition: filter 0.2s; }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-primary { background: var(--ui-accent); color: #fff; }
+    .btn-secondary { background: #333; color: #ddd; }
+
+    /* Modal */
+    #import-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-box { background: var(--ui-panel); padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; border: 1px solid var(--ui-border); }
+
+    @media (max-width: 800px) {
+      .layout-grid { grid-template-columns: 1fr; display: block; overflow: auto; height: auto; }
+      .editor-pane { height: auto; min-width: 100%; border-right: none; }
+      .editor-scroll-area { overflow: visible; }
+      .preview-pane { min-height: 100vh; padding: 20px 10px; }
+      html, body { overflow: auto; height: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="import-modal">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:var(--ui-accent)">Importar Postagem</h3>
+      <textarea id="import-area" style="height:120px; margin-bottom:10px;" placeholder="Cole o HTML da sua postagem anterior aqui..."></textarea>
+      <div class="row">
+        <button class="btn btn-primary" onclick="runImport()">Carregar</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('import-modal').style.display='none'">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-grid">
+    <div class="editor-pane">
+      <div class="editor-header">
+        <h1>Editor de Roleplay</h1>
+        <div class="row" style="margin-top:10px;">
+          <button class="btn btn-secondary" style="font-size:0.8em; padding:6px;" onclick="document.getElementById('import-modal').style.display='flex'">Importar</button>
+          <button class="btn btn-secondary" style="font-size:0.8em; padding:6px;" onclick="resetData()">Limpar</button>
+        </div>
+      </div>
+      
+      <div class="editor-scroll-area">
+        <div class="editor-content-wrapper">
+          
+          <div>
+            <label>Imagem da Cena (URL)</label>
+            <input type="text" id="inp-img" oninput="upd('img', this.value)" placeholder="https://...">
+          </div>
+
+          <div>
+            <label>Título</label>
+            <input type="text" id="inp-title" oninput="upd('title', this.value)" placeholder="Título do Post">
+            <label style="margin-top:5px">Subtítulo (Local / Data)</label>
+            <input type="text" id="inp-subtitle" oninput="upd('subtitle', this.value)" placeholder="Tokyo, 2025 - Noite">
+          </div>
+
+          <div class="row">
+            <div class="col"><label>HP (Atual / Máx)</label><input type="text" id="inp-hp" oninput="upd('hp', this.value)" value="2000 / 4000"></div>
+            <div class="col"><label>EA (Atual / Máx)</label><input type="text" id="inp-ea" oninput="upd('ea', this.value)" value="3200 / 3200"></div>
+          </div>
+
+          <div>
+            <label>Narração</label>
+            <div class="text-area-wrapper">
+              <div class="bbcode-toolbar">
+                <button class="bb-btn" title="Negrito" onclick="insertTag('inp-content', '[b]', '[/b]')"><b>B</b></button>
+                <button class="bb-btn" title="Itálico" onclick="insertTag('inp-content', '[i]', '[/i]')"><i>I</i></button>
+                <button class="bb-btn" title="Sublinhado" onclick="insertTag('inp-content', '[u]', '[/u]')"><u>U</u></button>
+                <button class="bb-btn" title="Riscado" onclick="insertTag('inp-content', '[s]', '[/s]')"><s>S</s></button>
+                <div class="bb-btn" title="Cor" style="position:relative;">
+                  <span class="material-icons-round" style="font-size:14px;">palette</span>
+                  <input type="color" onchange="insertTag('inp-content', '[color=' + this.value + ']', '[/color]')">
+                </div>
+                <button class="bb-btn" title="Spoiler" onclick="insertTag('inp-content', '[spoiler=&quot;Título&quot;]', '[/spoiler]')">
+                   <span class="material-icons-round" style="font-size:14px;">visibility_off</span>
+                </button>
+                 <button class="bb-btn" title="Link" onclick="insertTag('inp-content', '[url=https://]', '[/url]')">
+                   <span class="material-icons-round" style="font-size:14px;">link</span>
+                </button>
+              </div>
+              <textarea id="inp-content" oninput="upd('content', this.value)"></textarea>
+            </div>
+          </div>
+
+          <div>
+            <label>Notas do Sistema (Opcional)</label>
+            <div class="text-area-wrapper">
+              <div class="bbcode-toolbar">
+                <button class="bb-btn" onclick="insertTag('inp-extra', '[b]', '[/b]')"><b>B</b></button>
+                <button class="bb-btn" onclick="insertTag('inp-extra', '[i]', '[/i]')"><i>I</i></button>
+                <button class="bb-btn" onclick="insertTag('inp-extra', '[u]', '[/u]')"><u>U</u></button>
+                <div class="bb-btn" style="position:relative;">
+                  <span class="material-icons-round" style="font-size:14px;">palette</span>
+                  <input type="color" onchange="insertTag('inp-extra', '[color=' + this.value + ']', '[/color]')">
+                </div>
+                <button class="bb-btn" onclick="insertTag('inp-extra', '[spoiler=&quot;Dados&quot;]', '[/spoiler]')">
+                   <span class="material-icons-round" style="font-size:14px;">visibility_off</span>
+                </button>
+              </div>
+              <textarea id="inp-extra" style="min-height:80px;" oninput="upd('extra', this.value)"></textarea>
+            </div>
+          </div>
+
+          <div>
+            <label>Código HTML</label>
+            <textarea id="output-code" readonly style="font-family:monospace; color:var(--ui-accent); border-color:var(--ui-accent); height:80px;"></textarea>
+            <button class="btn btn-primary" style="margin-top:5px;" onclick="copyCode()">Copiar Código</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-pane">
+      <div id="preview-box"></div>
+    </div>
+  </div>
+
+<script>
+  let state = {
+    img: "https://i.pinimg.com/736x/ed/54/c6/ed54c6dcaaa0bf1681a35652bea0c3f2.jpg",
+    title: "Título da Postagem",
+    subtitle: "Local / Data / Turno",
+    hp: "2000 / 4000",
+    ea: "3200 / 3200",
+    content: "Escreva aqui a narração da sua personagem...",
+    extra: ""
+  };
+
+  function upd(field, val) {
+    state[field] = val;
+    renderPreview();
+    generateCode();
+  }
+
+  // --- BBCODE HELPER ---
+  function insertTag(textareaId, startTag, endTag) {
+    const textarea = document.getElementById(textareaId);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    
+    const before = text.substring(0, start);
+    const selected = text.substring(start, end);
+    const after = text.substring(end);
+    
+    textarea.value = before + startTag + selected + endTag + after;
+    
+    // Reposition cursor inside tags or after selection
+    textarea.selectionStart = start + startTag.length;
+    textarea.selectionEnd = end + startTag.length;
+    textarea.focus();
+    
+    // Trigger update
+    if (textareaId === 'inp-content') upd('content', textarea.value);
+    else upd('extra', textarea.value);
+  }
+
+  // --- BBCODE TO HTML PARSER (For Preview) ---
+  function parseBBCode(text) {
+    if(!text) return '';
+    let html = text
+      .replace(/\n/g, '<br>')
+      .replace(/\[b\](.*?)\[\/b\]/gs, '<b>$1</b>')
+      .replace(/\[i\](.*?)\[\/i\]/gs, '<i>$1</i>')
+      .replace(/\[u\](.*?)\[\/u\]/gs, '<u>$1</u>')
+      .replace(/\[s\](.*?)\[\/s\]/gs, '<s>$1</s>')
+      .replace(/\[color=(.*?)\](.*?)\[\/color\]/gs, '<span style="color:$1">$2</span>')
+      .replace(/\[url=(.*?)\](.*?)\[\/url\]/gs, '<a href="$1" target="_blank" style="color:#a050ff">$2</a>')
+      .replace(/\[spoiler="(.*?)"\](.*?)\[\/spoiler\]/gs, '<span class="spoiler-box" title="$1 (Spoiler)">$2</span>')
+      .replace(/\[spoiler\](.*?)\[\/spoiler\]/gs, '<span class="spoiler-box" title="Spoiler">$1</span>');
+    return html;
+  }
+
+  function renderPreview() {
+    const p = document.getElementById('preview-box');
+    const contentHtml = parseBBCode(state.content);
+    const extraHtml = parseBBCode(state.extra);
+
+    const extraBlock = state.extra.trim() ? 
+      `<div class="rp-post-extras"><div class="rp-post-extras-content">${extraHtml}</div></div>` : '';
+
+    const html = `
+      <div class="rp-post-container jjk-dossier-container">
+        <div class="rp-post-image-wrapper">
+          <img src="${state.img}" alt="Cena">
+          <div class="overlay vignette-overlay"></div>
+          <div class="overlay grid-overlay"></div>
+          <div class="frame-corners"><span class="corner top-left"></span><span class="corner top-right"></span><span class="corner bottom-right"></span><span class="corner bottom-left"></span></div>
+        </div>
+        <div class="rp-post-header">
+          <h2 class="post-title">${state.title}</h2>
+          <p class="post-subtitle">${state.subtitle}</p>
+        </div>
+        <div class="jjk-dossier-status-bars">
+          <div class="jjk-dossier-status-item"><span class="jjk-dossier-status-label">HP</span><div class="jjk-dossier-status-bar-wrapper"><div class="jjk-dossier-status-bar"><div class="jjk-dossier-status-bar-fill jjk-dossier-hp-fill" style="width:100%"></div></div><span class="jjk-dossier-status-value">${state.hp}</span></div></div>
+          <div class="jjk-dossier-status-item"><span class="jjk-dossier-status-label">EA</span><div class="jjk-dossier-status-bar-wrapper"><div class="jjk-dossier-status-bar"><div class="jjk-dossier-status-bar-fill jjk-dossier-ea-fill" style="width:100%"></div></div><span class="jjk-dossier-status-value">${state.ea}</span></div></div>
+        </div>
+        <div class="rp-post-content">${contentHtml}</div>
+        ${extraBlock}
+      </div>
+    `;
+    p.innerHTML = html;
+  }
+
+  function generateCode() {
+    const extraBlock = state.extra.trim() ? 
+      `<div class="rp-post-extras"><div class="rp-post-extras-content">${state.extra.replace(/\n/g, '<br>')}</div></div>` : '';
+      
+    const fullHTML = `
+<link href="https://gaaaaaaaaabs.github.io/goldenagerepositor.io/postagem2.css" rel="stylesheet" type="text/css">
+<div class="rp-post-container jjk-dossier-container">
+<div class="rp-post-image-wrapper"><img src="${state.img}"><div class="overlay vignette-overlay"></div><div class="overlay grid-overlay"></div><div class="frame-corners"><span class="corner top-left"></span><span class="corner top-right"></span><span class="corner bottom-right"></span><span class="corner bottom-left"></span></div></div>
+<div class="rp-post-header"><h2 class="post-title">${state.title}</h2><p class="post-subtitle">${state.subtitle}</p></div>
+<div class="jjk-dossier-status-bars">
+<div class="jjk-dossier-status-item"><span class="jjk-dossier-status-label">HP</span><div class="jjk-dossier-status-bar-wrapper"><div class="jjk-dossier-status-bar"><div class="jjk-dossier-status-bar-fill jjk-dossier-hp-fill"></div></div><span class="jjk-dossier-status-value">${state.hp}</span></div></div>
+<div class="jjk-dossier-status-item"><span class="jjk-dossier-status-label">EA</span><div class="jjk-dossier-status-bar-wrapper"><div class="jjk-dossier-status-bar"><div class="jjk-dossier-status-bar-fill jjk-dossier-ea-fill"></div></div><span class="jjk-dossier-status-value">${state.ea}</span></div></div>
+</div>
+<div class="rp-post-content">${state.content.replace(/\n/g, '<br>')}</div>
+${extraBlock}
+</div>`;
+
+    const minified = fullHTML.replace(/(\r\n|\n|\r)/gm, " ").replace(/\s+/g, ' ').replace(/> </g, '><');
+    document.getElementById('output-code').value = minified;
+  }
+
+  function copyCode() {
+    document.getElementById('output-code').select();
+    document.execCommand('copy');
+    alert("Copiado!");
+  }
+
+  function populateInputs() {
+    document.getElementById('inp-img').value = state.img;
+    document.getElementById('inp-title').value = state.title;
+    document.getElementById('inp-subtitle').value = state.subtitle;
+    document.getElementById('inp-hp').value = state.hp;
+    document.getElementById('inp-ea').value = state.ea;
+    document.getElementById('inp-content').value = state.content;
+    document.getElementById('inp-extra').value = state.extra;
+  }
+
+  function runImport() {
+    const code = document.getElementById('import-area').value;
+    if(!code) return alert("Cole o código.");
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(code, 'text/html');
+
+    state.img = doc.querySelector('.rp-post-image-wrapper img')?.src || '';
+    state.title = doc.querySelector('.post-title')?.textContent || '';
+    state.subtitle = doc.querySelector('.post-subtitle')?.textContent || '';
+    state.hp = doc.querySelector('.jjk-dossier-status-item:nth-child(1) .jjk-dossier-status-value')?.textContent || '';
+    state.ea = doc.querySelector('.jjk-dossier-status-item:nth-child(2) .jjk-dossier-status-value')?.textContent || '';
+    
+    // Extract content converting <br> back to newlines
+    const contentEl = doc.querySelector('.rp-post-content');
+    state.content = contentEl ? contentEl.innerHTML.replace(/<br\s*\/?>/gi, '\n').trim() : '';
+    
+    const extraEl = doc.querySelector('.rp-post-extras-content');
+    state.extra = extraEl ? extraEl.innerHTML.replace(/<br\s*\/?>/gi, '\n').trim() : '';
+
+    populateInputs();
+    renderPreview();
+    generateCode();
+    document.getElementById('import-modal').style.display = 'none';
+  }
+
+  function resetData() {
+    if(confirm("Limpar tudo?")) location.reload();
+  }
+
+  populateInputs();
+  renderPreview();
+  generateCode();
+</script>
+</body>
+</html>
